@@ -559,7 +559,7 @@ sub getProbeInt{
                      } 
                    }
                  }else{
-                   if($chr == /$line[0]/){
+                   if($chr == $line[0]){
                      if($probe[1] >= $start && $probe[0] <= $end){
                       push(@{$int{$chr}{$probe}}, $signal);
                       push(@{$step{$chr}{$probe}}, $step);
