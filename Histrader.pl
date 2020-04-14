@@ -523,6 +523,10 @@ sub getProbeInt{
     my @s=sortProbes(\%{$bgChr_ref});
 
     for(my $i=0; $i <= $#s; $i++){
+    
+       if($s[$i] =~ /track/){ # If bedGraph has a track header 
+          next;
+       }
 
        my $pos = ${$bgChr_ref}{$s[$i]};
        my @line=split(/\t/,line_with_index($dh, $ih, $pos));
