@@ -436,7 +436,7 @@ sub getProbes{
         
         my @line=split(/\t/);
         
-        if($line[0] =~ /POSITION/){
+        if($line[0] =~ /POSITION/ || $line[0] =~ /#/){
            next;
         }else{
            my $chr=$line[0];
