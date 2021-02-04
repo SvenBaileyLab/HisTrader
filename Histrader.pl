@@ -703,10 +703,12 @@ sub printBed{
     my $b=shift; #peak
     my $c=shift; #array of coordinates
     my $d=shift; #file handle bedfile
+    
+    my $n=$#{$c} + 1;
 
     for my $i (@{$c}){
        my @tmp=split(/-/,$i);
-       print $d "$a\t$tmp[0]\t$tmp[1]\t$a:$b\n";
+       print $d "$a\t$tmp[0]\t$tmp[1]\t$a:$b\t$n\n";
     }
 }
 
