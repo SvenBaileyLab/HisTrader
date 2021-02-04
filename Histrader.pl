@@ -721,6 +721,8 @@ sub printFasta{
     my $f=shift; #trim;
     my $g=shift; #trimSize
     
+    my $n=$#{$c} + 1;
+    
     for my $i (@{$c}){
        my $coord;
        if($f == 1){
@@ -736,7 +738,7 @@ sub printFasta{
        }
 
        my $seq=getFasta($coord,\%{$d});
-       print $e ">$coord\_$b\n$seq\n";
+       print $e ">$coord\_$b\_$n\n$seq\n";
 
     }
 }
