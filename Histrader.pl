@@ -480,6 +480,8 @@ sub getProbeInt{
     my $method=shift;
     my $prefix=shift;
     my $outBG=shift;
+    my $pThresh=shift;
+    my $filter=shift;
     my %genome=();
     my $df;
     my $nf;
@@ -585,6 +587,15 @@ sub getProbeInt{
  
                  if(@{$newSignal} && @{$newStep}){
 
+                     my $maxSig=my_max(@{$newSignal});
+                     my $cutoff=round($maxSig * $pThresh);
+
+                     for(my $i=0; $i<=$#{$newSignal}; $i++){
+                         if(${$newSignal}[$i] < $cutoff){
+                            ${$newSignal}[$i] = 0;
+                         }
+                     }                    
+
                      my @dhs=();
                      my @merge=();
                      my @nuc=();
@@ -609,6 +620,7 @@ sub getProbeInt{
                          }else{
                            print $mf "$chr\t$pos[0]\t$pos[1]\tISSUE DIFF\n";
                          }
+
                      }
                      if($method eq "MA" || $method eq "BOTH"){
                          my @fast=movingAverageCentre(\@{$newSignal},$t);          
@@ -637,12 +649,14 @@ sub getProbeInt{
                          }
                      }
                        
+ 
                      if($method eq "DIFF"){
                          if(@dhs){
-                            printBed($chr,$probe,\@dhs,$db); # print nucleosomes
+                            my @dhsF=filterBed(\@dhs,$filter);
+                            printBed($chr,$probe,\@dhsF,$db); # print nucleosomes
                             printBed($chr,$probe,\@merge,$nb); # print nucleosomes
                             if(defined $genome){
-                              printFasta($chr,$probe,\@dhs,\%genome,$df,$trim,$trimSize);
+                              printFasta($chr,$probe,\@dhsF,\%genome,$df,$trim,$trimSize);
                               printFasta($chr,$probe,\@merge,\%genome,$nf,$trim,$trimSize);
                             }
                          }
@@ -650,10 +664,11 @@ sub getProbeInt{
 
                      if($method eq "BOTH"){
                          if(@overlap){
-                           printBed($chr,$probe,\@overlap,$db);
+                           my @overlapF=filterBed(\@overlap,$filter);
+                           printBed($chr,$probe,\@overlapF,$db);
                            printBed($chr,$probe,\@nucOver,$nb);
                            if(defined $genome){
-                              printFasta($chr,$probe,\@overlap,\%genome,$df,$trim,$trimSize);
+                              printFasta($chr,$probe,\@overlapF,\%genome,$df,$trim,$trimSize);
                               printFasta($chr,$probe,\@nucOver,\%genome,$nf,$trim,$trimSize);
                            } 
                          }
@@ -661,10 +676,11 @@ sub getProbeInt{
        
                      if($method eq "MA"){
                         if(@free){
-                          printBed($chr,$probe,\@free,$db);
+                          my @freeF=filterBed(\@free,$filter);
+                          printBed($chr,$probe,\@freeF,$db);
                           printBed($chr,$probe,\@nuc,$nb);
                           if(defined $genome){
-                             printFasta($chr,$probe,\@free,\%genome,$df,$trim,$trimSize);
+                             printFasta($chr,$probe,\@freeF,\%genome,$df,$trim,$trimSize);
                              printFasta($chr,$probe,\@nuc,\%genome,$nf,$trim,$trimSize);
                           }
                         }
@@ -698,17 +714,37 @@ sub getProbeInt{
     }
 }
 
+sub filterBed{
+   my $a=shift;
+   my $b=shift; #filter size
+   
+   my @dInd=();
+
+   for(my $i=$#{$a}; $i>=0; $i--){
+       my @tmp=split(/-/,${$a}[$i]);
+       my $size=$tmp[1] - $tmp[0];
+       if($size > $b){
+         push(@dInd, $i);
+       }
+   }
+   for my $i (@dInd){
+      splice(@{$a},$i,1);
+   }
+   return(@{$a});
+}
+
 sub printBed{
     my $a=shift; #chromosome
     my $b=shift; #peak
     my $c=shift; #array of coordinates
     my $d=shift; #file handle bedfile
-    
-    my $n=$#{$c} + 1;
 
+    my $n=$#{$c} + 1;
+    my $s=0;
     for my $i (@{$c}){
+       $s+=1;
        my @tmp=split(/-/,$i);
-       print $d "$a\t$tmp[0]\t$tmp[1]\t$a:$b\t$n\n";
+         print $d "$a\t$tmp[0]\t$tmp[1]\t$a:$b\t$n\t$s\n"; #number of nfrs or nucleosomes
     }
 }
 
@@ -720,26 +756,28 @@ sub printFasta{
     my $e=shift; #file handle fasta
     my $f=shift; #trim;
     my $g=shift; #trimSize
-    
+
     my $n=$#{$c} + 1;
-    
+    my $s=0;
+ 
     for my $i (@{$c}){
        my $coord;
-       if($f == 1){
-          my @tmp=split(/-/, $i);
-          my $mid=round(($tmp[1] + $tmp[0])/2);
-          my $ext=round($g/2);
-          my $start=$mid - $ext; 
-          my $end=$mid + $ext;
-          my $region=join("-",$start,$end);
-          $coord=join(":",$a,$region);
-       }else{
-          $coord=join(":",$a,$i);
-       }
-
-       my $seq=getFasta($coord,\%{$d});
-       print $e ">$coord\_$b\_$n\n$seq\n";
-
+       $s+=1;
+       my @tmp=split(/-/, $i);
+      
+         if($f == 1){
+           my $mid=round(($tmp[1] + $tmp[0])/2);
+           my $ext=round($g/2);
+           my $start=$mid - $ext; 
+           my $end=$mid + $ext;
+           my $region=join("-",$start,$end);
+           $coord=join(":",$a,$region);
+         }else{
+           $coord=join(":",$a,$i);
+         }
+ 
+         my $seq=getFasta($coord,\%{$d});
+         print $e ">$coord\_$b\_$n\_$s\n$seq\n";
     }
 }
 
@@ -896,6 +934,8 @@ my $nucSize=150;
 my $trim=0;
 my $trimSize=100;
 my $help=0;
+my $pMax=0;
+my $filter=1000;
 my $outBG=0;
 my $outPrefix="Histrader";
 
@@ -912,7 +952,9 @@ GetOptions( "bedGraph:s"   => \$chip,   # --bedGraph ... Histone ChIP-seq bedgra
             "nucSize:i"    => \$nucSize, # nucleosome size in bp
             "trim"	   => \$trim,
             "trimSize:i"   => \$trimSize, # size in bp for output fasta file
-            "outBG"      => \$outBG,
+            "outBG"        => \$outBG,
+            "pMax:f"         => \$pMax, #percentage of max in peak
+            "filter:i"       => \$filter, #percentage of max in peak
             "help"         => \$help); #--help ... Print help message
 
 printHeader;
@@ -958,8 +1000,10 @@ if($help==1){
    print "--nucSize\tThe estimated nucleosome size in base pairs (bp).This value is used for the moving average and smoothing the signal.\n\t\tThis value should be divisible by the step size specified (--step).\n\t\tDefault: 150 (~147).\t150 / 25 = 6 (6 bins is equivalent to 1 nucleosome)\n\n"; 
    print "--mergeMulti\tThe multiplier of step (--step) to use for merging.\n\t\tDefault = 3\t( 3 x 25 = 75 or ~ 1/2 a nucleosome)\n\n";
    print "--maMulti\tThe moving average multiplier for the slow moving average.\n\t\tDefault = 3 (ie. Slow moving average is equilavent to 3 nucleosomes [3 x 150])\n\n";
+   print "--pMax\t\tFraction of max peak height to use as a threshold. Use to reduce calls in regions with low signal.\n\t\tFor example, use 0.25 (25%) to exclude signal less than 25% of the current peak's max height.\n\t\tDefault = 0 (or 0%) (Optional)\n\n";
+   print "--filter\tFilter NFRs greater than this value. Needed for --pMAX, which can lead to large regions called as NFRs depending on the inputted peaks\n\t\tDefault = 1000 (bp) (Optional).\n\n";
    print "--outBG\t\tOutput the fixed step ChIP-Seq signal at the specified broad peaks (bedGraph format).\n\n";
-   print "--help (prints this message)\n\n";
+   print "--help\t\t(prints this message)\n\n";
    exit();
 }
 
@@ -972,7 +1016,7 @@ my $t2=round($tmp);
 
 # print Additional parameters
 print "Merge Distance = $mergeDist\nBins Per Nucleosome = $t\n";
-
+print "pMax = $pMax\nFitler = $filter\n";
 my %probes=getProbes($probes);
 
 my %sortedProbes=();
@@ -984,6 +1028,6 @@ for my $chr (keys %probes){
 
 my $index=join(".",$outPrefix,"idx");
 my %bgChr=build_index($chip,$index); 
-getProbeInt($index,$chip,\%bgChr,\%sortedProbes,$genome,$trim,$trimSize,$nucSize, $minPeak, $t, $t2, $fixStep, $mergeDist, $method, $outPrefix, $outBG);
+getProbeInt($index,$chip,\%bgChr,\%sortedProbes,$genome,$trim,$trimSize,$nucSize, $minPeak, $t, $t2, $fixStep, $mergeDist, $method, $outPrefix, $outBG, $pMax, $filter);
 
 print "\nFINISHED!\n";
