@@ -1016,7 +1016,7 @@ my $t2=round($tmp);
 
 # print Additional parameters
 print "Merge Distance = $mergeDist\nBins Per Nucleosome = $t\n";
-print "pMax = $pMax\nFitler = $filter\n";
+print "pMax = $pMax\nFilter = $filter\n";
 my %probes=getProbes($probes);
 
 my %sortedProbes=();
