@@ -67,7 +67,7 @@ perl HISTRADER.pl --bedGraph ChIP.bedGraph --peaks ChIP.bed --method BOTH --step
 If you use **HisTrader** in your research, please cite:
 
 > **[HisTrader: A Tool to Identify Nucleosome Free Regions from ChIP-Seq of Histone Post-Translational Modifications]**  
-> [Efythios Kirbizakis, Yifei Yan, Ansley Gnanapragasam, Xiaoyang Zhang, and and Swneke Bailey]  
+> [Eftyhios Kirbizakis, Yifei Yan, Ansley Gnanapragasam, Xiaoyang Zhang, and Swneke Bailey]  
 > [biorxiv, 2020]  
 > [https://doi.org/10.1101/2020.03.12.989228]  
 
