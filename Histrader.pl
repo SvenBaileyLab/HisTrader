@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 ########################################################################################################
 ##                                                                                                    ##
 ##    HISTRADER: A tool to identify nucleosome free regions from ChIP-Seq of Histone Modifications    ##
@@ -14,7 +15,7 @@ use POSIX;
 use Getopt::Long;
 
 
-# load genome fasta file into a hash / each sequence is one continuous string
+# Load genome fasta file into a hash where each sequence is stored as a continuous string
 # returns a hash
 sub loadGenome{
    my $fname=shift;
@@ -49,7 +50,7 @@ sub loadGenome{
    return(%h);
 }
 
-# extract fasta sequence given .bed file coordinates
+# Extract fasta sequence using .bed file coordinates
 sub getFasta{
    my $coord=shift; # a bed file of DHS coordinates -- change to a %hash
    my $genome_ref=shift; #hash containing genome sequence
@@ -68,6 +69,7 @@ sub getFasta{
    return($seq);
 }
 
+# Compute maximum value from an array
 sub my_max {
    my $max = shift;
    my $next;
@@ -78,6 +80,7 @@ sub my_max {
    return $max;
 }
 
+# Compute minimum value from an array
 sub my_min {
    my $min = shift;
    my $next;
