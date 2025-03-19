@@ -44,7 +44,7 @@ perl HISTRADER.pl --bedGraph ChIP.bedGraph --peaks ChIP.bed
 | `--step`     | Fixed **step size** (bp) for converting ChIP-Seq profiles (default: **25 bp**) |
 | `--minSize`  | Minimum peak size for NFR calling (default: **500 bp**) |
 | `--nucSize`  | Estimated **nucleosome size** (bp), used for moving average smoothing (default: **150 bp**) |
-| `--mergeMulti` | Step multiplier for merging (default: **3×step** = **75 bp**) |
+| `--mergeMulti` | Step multiplier for merging (default: **3×step = 75bp**) |
 | `--maMulti`  | Moving average multiplier for slow-moving average (default: **3×nucleosome size**) |
 | `--pMax`     | **Fraction of peak height** to use as a threshold for filtering (default: **0** = 0%) |
 | `--filter`   | Filter NFRs larger than a specified size (default: **1000 bp**) |
