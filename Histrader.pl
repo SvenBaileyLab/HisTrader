@@ -3,8 +3,8 @@
 ##    HISTRADER: A tool to identify nucleosome free regions from ChIP-Seq of Histone Modifications    ##
 ##                                                                                                    ##
 ##                                                                                                    ##
-##                                Written by Yifei Yan and Swneke D. Bailey                           ##
-##                                   Copyright 2020 Swneke D. Bailey                                  ##
+##                  Written by Eftyhios Kirbizakis, Yifei Yan, and Swneke D. Bailey                   ##
+##                               Copyright 2020 Swneke D. Bailey                                      ##
 ##                                                                                                    ##
 ########################################################################################################
 
@@ -31,16 +31,16 @@ sub loadGenome{
       my $line=$_;
 
       if($line =~ /^\s*$/){
-          next;
+         next;
       }elsif($line =~ /^\s*#/){
-          next;
+         next;
       }elsif($line =~ /^>/){
-          my @name=split(/\s+/, $line); 
-          $name=$name[0];
-          $name=~ s/>//g; # remove fasta format
-          next;
+         my @name=split(/\s+/, $line); 
+         $name=$name[0];
+         $name=~ s/>//g; # remove fasta format
+         next;
       }else{
-          $h{$name} .= $line;
+         $h{$name} .= $line;
       }
    }
 
@@ -51,21 +51,41 @@ sub loadGenome{
 
 # extract fasta sequence given .bed file coordinates
 sub getFasta{
-    my $coord=shift; # a bed file of DHS coordinates -- change to a %hash
-    my $genome_ref=shift; #hash containing genome sequence
+   my $coord=shift; # a bed file of DHS coordinates -- change to a %hash
+   my $genome_ref=shift; #hash containing genome sequence
 
-    my @coord=split(/:|-/,$coord);
-    my $seq;
+   my @coord=split(/:|-/,$coord);
+   my $seq;
 
-    my $chr=$coord[0], my $start=$coord[1], my $end=$coord[2]; # redundant but clear
+   my $chr=$coord[0], my $start=$coord[1], my $end=$coord[2]; # redundant but clear
 
-    if(exists ${$genome_ref}{$chr}){ # NOTE must use same naming convention
-        my $pos=join("-",$start,$end);
-        my $size=$end - $start;
-        $seq=substr(${$genome_ref}{$chr},$start - 1,$size + 1); # CHECK 0 or 1 offset
-    }
+   if(exists ${$genome_ref}{$chr}){ # NOTE must use same naming convention
+      my $pos=join("-",$start,$end);
+      my $size=$end - $start;
+      $seq=substr(${$genome_ref}{$chr},$start - 1,$size + 1); # CHECK 0 or 1 offset
+   }
 
    return($seq);
+}
+
+sub my_max {
+   my $max = shift;
+   my $next;
+   while (@_) {
+      $next = shift;
+      $max = $next if ($next > $max);
+   }
+   return $max;
+}
+
+sub my_min {
+   my $min = shift;
+   my $next;
+   while (@_) {
+      $next = shift;
+      $min = $next if ($next < $min);
+   }
+   return $min;
 }
 
 sub movingAverageCentre{
@@ -215,16 +235,6 @@ sub aveStep{
    return($average);
 }
 
-sub my_min {
-    my $min = shift;
-    my $next;
-    while(@_){
-       $next = shift;
-       $min = $next if($next < $min);
-    }
-    return $min;
-}
-
 sub increaseStep{
     my $a=shift; #signal
     my $b=shift; #step
@@ -270,32 +280,32 @@ sub increaseStep{
          push(@tmpStep, @pos);
          
       }
-    }
+   }
    return(\@newSig, \@newStep);
 }
 
 sub increaseSig{
-    my $a=shift;
-    my $step=shift;
+   my $a=shift;
+   my $step=shift;
 
-    my @int=@{$a};
+   my @int=@{$a};
 
-    my $end=$#int;
-    my $e=0;
-    my @new=();
+   my $end=$#int;
+   my $e=0;
+   my @new=();
    
-    for(my $i=0; $i<=$end; $i+=$step){
-       my @tmp=();
-       if($e + $step <= $end){
+   for(my $i=0; $i<=$end; $i+=$step){
+      my @tmp=();
+      if($e + $step <= $end){
          $e=$i+$step; 
-       }else{
+      }else{
          $e=$end;
-       }
-       for(my $j=$i; $j<$e; $j++){
+      }
+      for(my $j=$i; $j<$e; $j++){
          push(@tmp,$int[$j]);
-       }
-       my $max=my_max(@tmp);
-       push(@new, $max);
+      }
+      my $max=my_max(@tmp);
+      push(@new, $max);
    }
    return(\@new);
 }
@@ -304,7 +314,7 @@ sub increaseSig{
 sub merge{
    my $a = shift;
    my $d = shift;
- 
+
    # assumes sorted
    my @merge=();
    my @pos=split(/-/,${$a}[0]);
@@ -312,7 +322,7 @@ sub merge{
    my $end=$pos[1];
 
    my %merge=(); 
-  
+
    $merge{$start}=$end;
 
    #print "@pos\n";
@@ -336,26 +346,173 @@ sub merge{
    return(@merge);
 }     
 
-sub highRes{
-    my $signal = shift;
-    my $position = shift;
+sub mergeOverlaps{
+   my $a=shift; #assumes sorted
+   
+   my @regions=@{$a};
+   my @merge=();
 
-    my @hresSig=();
-    my @hresPos=();
-    
- 
-    for(my $i=0; $i<=$#{$position}; $i++){
-       my @pos=split(/-/,${$position}[$i]);
-       my $start=$pos[0];
-       my $end=$pos[1];   
-       for(my $j=$start; $j<=$end - 1; $j++){
-          my $pos=join("-",$j, $j+1);
-          push(@hresSig, ${$signal}[$i]);
-          push(@hresPos, $pos);
-       }
-    }
-    return( \@hresSig, \@hresPos);
+   print "REGIONS -- @regions\n";
+
+   for(my $i=0; $i <= $#regions - 1; $i++){
+      my @pos=split(/-/,$regions[$i]);
+      my $start=$pos[0];
+      my $end=$pos[1];
+      for(my $j=$i + 1; $j <= $#regions; $j++){
+         my @pos2=split(/-/,$regions[$j]);
+         my $start2=$pos2[0];
+         my $end2=$pos2[1];
+         if($end >= $start2 && $start2 >= $start ){
+            $end=$end2;
+            splice(@regions, $j, 1);
+         }
+      }
+      my $new=join("-",$start,$end);
+      push(@merge,$new);
+   }
+   return(@merge);
 }
+
+sub highRes{
+   my $signal = shift;
+   my $position = shift;
+
+   my @hresSig=();
+   my @hresPos=();
+   
+
+   for(my $i=0; $i<=$#{$position}; $i++){
+      my @pos=split(/-/,${$position}[$i]);
+      my $start=$pos[0];
+      my $end=$pos[1];   
+      for(my $j=$start; $j<=$end - 1; $j++){
+         my $pos=join("-",$j, $j+1);
+         push(@hresSig, ${$signal}[$i]);
+         push(@hresPos, $pos);
+      }
+   }
+   return( \@hresSig, \@hresPos);
+}
+
+
+sub getMaxNucValley {
+    my ($a, $b, $c, $d, $useDifferential) = @_;
+
+    my @nucs = @{$a};
+    my @open = @{$b};
+    my @chipSig = @{$c};
+    my @chipStep = @{$d};
+
+    return ("NA-NA", "NA-NA") if !@nucs;
+
+    my %maxNuc;
+    my %minNFRSignal;
+    my %nfrDifferentials;
+
+    # Calculate maximum signal for nucleosomes
+    for (my $j = 0; $j <= $#nucs; $j++) {
+        my @nucSS = split(/-/, $nucs[$j]);
+        my @tmpNucSignal;
+
+        for (my $i = 0; $i <= $#chipStep; $i++) {
+            my @oriSS = split(/-/, $chipStep[$i]);
+
+            if ($oriSS[0] >= $nucSS[0] && $oriSS[1] <= $nucSS[1]) {
+                push(@tmpNucSignal, $chipSig[$i]);
+            }
+        }
+
+        $maxNuc{$nucs[$j]} = my_max(@tmpNucSignal) if @tmpNucSignal;
+    }
+
+    # Calculate the minimum signal for NFRs
+    for (my $k = 0; $k <= $#open; $k++) {
+        my @nfrSS = split(/-/, $open[$k]);
+        my @tmpNFRSignal;
+
+        for (my $i = 0; $i <= $#chipStep; $i++) {
+            my @oriSS = split(/-/, $chipStep[$i]);
+
+            if ($oriSS[0] >= $nfrSS[0] && $oriSS[1] <= $nfrSS[1]) {
+                push(@tmpNFRSignal, $chipSig[$i]);
+            }
+        }
+
+        $minNFRSignal{$open[$k]} = my_min(@tmpNFRSignal) if @tmpNFRSignal;
+    }
+
+    if ($useDifferential eq "TRUE") {
+        # Calculate the differential-based method
+        my $maxDifferential = -1;
+        my $bestNFR = "NA-NA";
+
+        for (my $k = 0; $k < $#nucs; $k++) {
+            if ($k < $#nucs) {
+                my $leftNuc = $nucs[$k];
+                my $rightNuc = $nucs[$k + 1];
+
+                if (exists $maxNuc{$leftNuc} && exists $maxNuc{$rightNuc}) {
+                    my $nucSum = $maxNuc{$leftNuc} + $maxNuc{$rightNuc};
+
+                    if ($k < $#open) {
+                        my $currentNFR = $open[$k + 1];
+                        my $nfrSignal = $minNFRSignal{$currentNFR} // 1e9;
+
+                        my $differential = $nucSum - $nfrSignal;
+                        if ($differential > $maxDifferential) {
+                            $maxDifferential = $differential;
+                            $bestNFR = $currentNFR;
+                        }
+                    }
+                }
+            }
+        }
+
+        # Return all nucleosome signals and the NFR with the largest differential
+        my @allNucSignals = map { $maxNuc{$_} // "NA" } @nucs;
+        return (\@allNucSignals, $bestNFR);
+
+    } else {
+        # Return nucleosome with the smallest NFR signal
+        my $maxNucSig;
+        my $maxValue = -1;
+
+        while ((my $nuc, my $sig) = each %maxNuc) {
+            if ($sig > $maxValue) {
+                $maxValue = $sig;
+                $maxNucSig = $nuc;
+            }
+        }
+
+        my $maxDHS = "NA-NA";
+        my $leftSignal;
+        my $rightSignal;
+
+        for (my $k = 0; $k <= $#nucs; $k++) {
+            if ($nucs[$k] eq $maxNucSig) {
+                if ($k > 0) {
+                    $leftSignal = $minNFRSignal{$open[$k - 1]} // 1e9;
+                }
+                if ($k < $#nucs) {
+                    $rightSignal = $minNFRSignal{$open[$k]} // 1e9;
+                }
+
+                if (defined $leftSignal && defined $rightSignal) {
+                    $maxDHS = ($leftSignal < $rightSignal) ? $open[$k - 1] : $open[$k];
+                } elsif (defined $leftSignal) {
+                    $maxDHS = $open[$k - 1];
+                } elsif (defined $rightSignal) {
+                    $maxDHS = $open[$k];
+                }
+                last;
+            }
+        }
+
+        my @allNucSignals = map { $maxNuc{$_} // "NA" } @nucs;
+        return (\@allNucSignals, $maxDHS);
+    }
+}
+
 
 sub build_index{
 
@@ -414,15 +571,6 @@ sub line_with_index{
 }
 
 
-sub my_max{
-    my $max = shift;
-    my $next;
-    while(@_){
-        $next = shift;
-        $max = $next if ($next > $max);
-    }
-    return $max;
-}
 
 sub getProbes{
     my $probes=shift;
@@ -464,116 +612,120 @@ sub sortProbes{
 
 # need to keep track of position in array of probes and keep moving forward and not going back to the start!
 sub getProbeInt{
-    my $index=shift;
-    my $ints=shift;
-    my $bgChr_ref=shift;
-    my $sortedProbes=shift;
-    my $genome=shift;
-    my $trim=shift;
-    my $trimSize=shift;
-    my $nucSize=shift;
-    my $minSize=shift;
-    my $t=shift;   
-    my $t2=shift;
-    my $fixStep=shift;
-    my $mergeDist=shift;
-    my $method=shift;
-    my $prefix=shift;
-    my $outBG=shift;
-    my $pThresh=shift;
-    my $filter=shift;
-    my %genome=();
-    my $df;
-    my $nf;
-    my $bg;
-    my $dFasta;
-    my $nFasta;
-    my $bgOut;
-    my %sortedProbes=%$sortedProbes;
-    my $pg=0; 
-    my $dhsBed=join(".",$prefix,"nfr.bed");
-    my $nucBed=join(".",$prefix,"nuc.bed"); 
-    my $missBed=join(".",$prefix,"missing.bed");
+   my $index=shift;
+   my $ints=shift;
+   my $bgChr_ref=shift;
+   my $sortedProbes=shift;
+   my $genome=shift;
+   my $trim=shift;
+   my $trimSize=shift;
+   my $nucSize=shift;
+   my $minSize=shift;
+   my $t=shift;   
+   my $t2=shift;
+   my $fixStep=shift;
+   my $mergeDist=shift;
+   my $method=shift;
+   my $prefix=shift;
+   my $outBG=shift;
+   my $pThresh=shift;
+   my $filter=shift;
+   my $maxValley=shift;
+   my $randValley=shift;
+   my $useDifferential=shift;
 
-    #Print Output Filenames 
-    print "\nOutput Filenames:\nNucleosome Free Regions (NFRs) = $dhsBed\nNucleosome Occupied Regions = $nucBed\nNo NFRs Detected = $missBed\n";
- 
-    open(my $ih,"<",$index);
-    open(my $dh,"<",$ints);
+   my %genome=();
+   my $df;
+   my $nf;
+   my $bg;
+   my $dFasta;
+   my $nFasta;
+   my $bgOut;
+   my %sortedProbes=%$sortedProbes;
+   my $pg=0; 
+   my $dhsBed=join(".",$prefix,"nfr.bed");
+   my $nucBed=join(".",$prefix,"nuc.bed"); 
+   my $missBed=join(".",$prefix,"missing.bed");
 
-    open(my $db,">",$dhsBed);
-    open(my $nb,">",$nucBed);
-    open(my $mf,">",$missBed); # Sites without a NFR
+   #Print Output Filenames 
+   print "\nOutput Filenames:\nNucleosome Free Regions (NFRs) = $dhsBed\nNucleosome Occupied Regions = $nucBed\nNo NFRs Detected = $missBed\n";
+
+   open(my $ih,"<",$index);
+   open(my $dh,"<",$ints);
+
+   open(my $db,">",$dhsBed);
+   open(my $nb,">",$nucBed);
+   open(my $mf,">",$missBed); # Sites without a NFR
 
    if($outBG == 1){
       $bgOut=join(".",$prefix,"bedGraph");;
       open($bg,">",$bgOut);
    } 
    if(defined $genome){
-       $pg=1;
-       %genome=loadGenome($genome);
-       $dFasta=join(".",$prefix,"nfr.fa");
-       $nFasta=join(".",$prefix,"nuc.fa");
-       print "DNA Sequences within NFRs = $dFasta\nDNA Sequences within occupied regions = $nFasta\n"; 
-       open($df,">",$dFasta) or die;
-       open($nf,">",$nFasta) or die;
-    }
+      $pg=1;
+      %genome=loadGenome($genome);
+      $dFasta=join(".",$prefix,"nfr.fa");
+      $nFasta=join(".",$prefix,"nuc.fa");
+      print "DNA Sequences within NFRs = $dFasta\nDNA Sequences within occupied regions = $nFasta\n"; 
+      open($df,">",$dFasta) or die;
+      open($nf,">",$nFasta) or die;
+   }
 
-    my %int=();
-    my %step=();
+   my %int=();
+   my %step=();
 
-    my @s=sortProbes(\%{$bgChr_ref});
+   my @s=sortProbes(\%{$bgChr_ref});
 
-    for(my $i=0; $i <= $#s; $i++){
-    
-       if($s[$i] =~ /track/){ # If bedGraph has a track header 
-          next;
-       }
+   for(my $i=0; $i <= $#s; $i++){
+   
+      if($s[$i] =~ /track/){ # If bedGraph has a track header 
+         next;
+      }
 
-       my $pos = ${$bgChr_ref}{$s[$i]};
-       my @line=split(/\t/,line_with_index($dh, $ih, $pos));
+      my $pos = ${$bgChr_ref}{$s[$i]};
+      my @line=split(/\t/,line_with_index($dh, $ih, $pos));
 
-       chomp(@line);
+      chomp(@line);
 
-       my $chr=$s[$i];
-       my $start=$line[1];
-       my $end=$line[2];
-       my $signal=$line[3];
-       my $step=join("-",$start,$end);    
- 
-       for my $probe ( @{$sortedProbes{$s[$i]}}){
-           my @probe=split(/-/,$probe);
+      my $chr=$s[$i];
+      my $start=$line[1];
+      my $end=$line[2];
+      my $signal=$line[3];
+      my $step=join("-",$start,$end);    
 
-           if($probe[1] - $probe[0] >= $minSize){
-              my @hresSig=();
-              my @hresPos=();
-              #while( $start < $probe[1]){
-              while( $start <= $probe[1]){
-                 @line=split(/\t/,line_with_index($dh, $ih, $pos));
-                 chomp(@line);
-                 $chr=$s[$i];
-                 $start=$line[1];
-                 $end=$line[2];
-                 $signal=$line[3];
-                 $step=join("-",$start,$end);
-                 #check
-                 if($chr =~ /[a-zA-Z]/){
-                   if($chr eq $line[0]){
+      for my $probe ( @{$sortedProbes{$s[$i]}}){
+         my @probe=split(/-/,$probe);
+
+         if($probe[1] - $probe[0] >= $minSize){
+            my @hresSig=();
+            my @hresPos=();
+            #while( $start < $probe[1]){
+            while( $start <= $probe[1]){
+               @line=split(/\t/,line_with_index($dh, $ih, $pos));
+               chomp(@line);
+               $chr=$s[$i];
+               $start=$line[1];
+               $end=$line[2];
+               $signal=$line[3];
+               $step=join("-",$start,$end);
+               #check
+               if($chr =~ /[a-zA-Z]/){
+                  if($chr eq $line[0]){
                      if($probe[1] >= $start && $probe[0] <= $end){
-                      push(@{$int{$chr}{$probe}}, $signal);
-                      push(@{$step{$chr}{$probe}}, $step);
+                        push(@{$int{$chr}{$probe}}, $signal);
+                        push(@{$step{$chr}{$probe}}, $step);
                      } 
-                   }
-                 }else{
-                   if($chr == $line[0]){
+                  }
+               }else{
+                  if($chr == $line[0]){
                      if($probe[1] >= $start && $probe[0] <= $end){
-                      push(@{$int{$chr}{$probe}}, $signal);
-                      push(@{$step{$chr}{$probe}}, $step);
-                    }
-                   }
-                 }
-                 $pos+=1;
-              }
+                        push(@{$int{$chr}{$probe}}, $signal);
+                        push(@{$step{$chr}{$probe}}, $step);
+                     }   
+                  }
+               }
+               $pos+=1;
+            }
      
               my $peak=join(":",$chr,$probe);
              
@@ -653,6 +805,20 @@ sub getProbeInt{
                      if($method eq "DIFF"){
                          if(@dhs){
                             my @dhsF=filterBed(\@dhs,$filter);
+                            if($maxValley eq "TRUE"){
+                               my ($maxNuc,$maxDHS)=getMaxNucValley(\@merge,\@dhsF,\@{$newSignal},\@{$newStep},$useDifferential);
+                               @dhsF=();
+                               if($maxDHS ne "NA-NA"){
+                                  push(@dhsF, $maxDHS);
+                               }
+                            }
+                            if($randValley eq "TRUE"){
+                              if(@dhsF != 0){
+                                my $randDHS = splice(@dhsF, int rand @dhsF, 1);
+                                @dhsF=(); 
+                                push(@dhsF,$randDHS);
+                              }
+                            }       
                             printBed($chr,$probe,\@dhsF,$db); # print nucleosomes
                             printBed($chr,$probe,\@merge,$nb); # print nucleosomes
                             if(defined $genome){
@@ -665,11 +831,26 @@ sub getProbeInt{
                      if($method eq "BOTH"){
                          if(@overlap){
                            my @overlapF=filterBed(\@overlap,$filter);
+                           my @updateMerge=mergeOverlaps(\@nucOver);
+                           if($maxValley eq "TRUE"){
+                               my ($maxNuc,$maxDHS)=getMaxNucValley(\@updateMerge,\@overlapF,\@{$newSignal},\@{$newStep},$useDifferential);
+                               @overlapF=();
+                               if($maxDHS ne "NA-NA"){
+                                  push(@overlapF, $maxDHS);
+                               }
+                           }
+                           if($randValley eq "TRUE"){
+                              if(@overlapF != 0){
+                                 my $randDHS = splice(@overlapF, int rand @overlapF, 1);
+                                 @overlapF=();
+                                 push(@overlapF, $randDHS);
+                              }
+                           }       
                            printBed($chr,$probe,\@overlapF,$db);
-                           printBed($chr,$probe,\@nucOver,$nb);
+                           printBed($chr,$probe,\@updateMerge,$nb);
                            if(defined $genome){
                               printFasta($chr,$probe,\@overlapF,\%genome,$df,$trim,$trimSize);
-                              printFasta($chr,$probe,\@nucOver,\%genome,$nf,$trim,$trimSize);
+                              printFasta($chr,$probe,\@updateMerge,\%genome,$nf,$trim,$trimSize);
                            } 
                          }
                      }  
@@ -677,6 +858,21 @@ sub getProbeInt{
                      if($method eq "MA"){
                         if(@free){
                           my @freeF=filterBed(\@free,$filter);
+                            if($maxValley eq "TRUE"){
+                               my ($maxNuc,$maxDHS)=getMaxNucValley(\@nuc,\@freeF,\@{$newSignal},\@{$newStep},$useDifferential);
+                               @freeF=();
+                               if($maxDHS ne "NA-NA"){
+                                  push(@freeF, $maxDHS);
+                               }
+                            }
+                            if($randValley eq "TRUE"){
+                              if(@freeF != 0){
+                                 my $randDHS = splice(@freeF, int rand @freeF, 1);
+                                 @freeF=();
+                                 push(@freeF, $randDHS);
+                              }
+                            }       
+                          
                           printBed($chr,$probe,\@freeF,$db);
                           printBed($chr,$probe,\@nuc,$nb);
                           if(defined $genome){
@@ -739,6 +935,9 @@ sub printBed{
     my $c=shift; #array of coordinates
     my $d=shift; #file handle bedfile
 
+   # Check if the array reference is empty
+   return unless @{$c};
+
     my $n=$#{$c} + 1;
     my $s=0;
     for my $i (@{$c}){
@@ -788,8 +987,8 @@ sub printHeader{
     print "##    HISTRADER: A tool to identify nucleosome free regions from ChIP-Seq of Histone Modifications    ##\n";
     print "##                                                                                                    ##\n";
     print "##                                                                                                    ##\n";
-    print "##                                Written by Yifei Yan and Swneke D. Bailey                           ##\n";
-    print "##                                   Copyright 2020 Swneke D. Bailey                                  ##\n";
+    print "##                  Written by Eftyhios Kirbizakis, Yifei Yan, and Swneke D. Bailey                   ##\n";
+    print "##                               Copyright 2020 Swneke D. Bailey                                      ##\n";
     print "##                                                                                                    ##\n";
     print "########################################################################################################\n";  
 }
@@ -938,7 +1137,9 @@ my $pMax=0;
 my $filter=1000;
 my $outBG=0;
 my $outPrefix="Histrader";
-
+my $maxValley="FALSE";
+my $randValley="FALSE";
+my $useDifferential = "FALSE";
 
 GetOptions( "bedGraph:s"   => \$chip,   # --bedGraph ... Histone ChIP-seq bedgraph
 	    "peaks:s"      => \$probes,   # --peaks ...  Bed file
@@ -955,6 +1156,9 @@ GetOptions( "bedGraph:s"   => \$chip,   # --bedGraph ... Histone ChIP-seq bedgra
             "outBG"        => \$outBG,
             "pMax:f"         => \$pMax, #percentage of max in peak
             "filter:i"       => \$filter, #percentage of max in peak
+            "maxValley:s"  => \$maxValley, #only print valley at max peak
+            "useDifferential:s"  => \$useDifferential, #only print valley at max peak
+            "randValley:s" => \$randValley, #only print one random valley
             "help"         => \$help); #--help ... Print help message
 
 printHeader;
@@ -988,25 +1192,32 @@ if($help==1){
    print "\nUSAGE: perl HISTRADER.pl --bedGraph ChIP.bedGraph --peaks ChIP.bed\n";
    print "\nOPTIONS:\n\n";
    print "--bedGraph\tSpecify ChIP-Seq signal file (bedGraph format) (required)\n\n";
-   print "--peaks\t\tSpecify the BROAD PEAK file (bed format) (required)\n\n";
-   print "--genome\tSpecify genome fasta file (optional)\n\t\tUsed to extract the DNA sequence within the valleys/footprints/NFRs\n\n";
-   print "--trim\t\tSpecify that fasta sequences should be trimmed\n\t\tDefault (OFF).\tREQUIRES --genome and --trimSize.\n\n";
+   print "--peaks\tSpecify the BROAD PEAK file (bed format) (required)\n\n";
+   print "--genome\tSpecify genome fasta file (optional)\n\tUsed to extract the DNA sequence within the valleys/footprints/NFRs\n\n";
+   print "--trim\tSpecify that fasta sequences should be trimmed\n\tDefault (OFF).\tREQUIRES --genome and --trimSize.\n\n";
    print "--trimSize\tThe length of fasta sequence in base pairs (bp) returned for each valley / footprint / NFR. Sequences are trimmed from the centre of each valley / footprint / NFR.\n";
-   print "\t\tREQUIRES --trim and --genome\n\n";
-   print "--out\t\tThe output file prefix\n\t\tDefault=Histrader (optional)\n\n";
-   print "--method\tMethod used to call valleys / footprints/ NFRs\n\t\tOptions = MA (moving average) / DIFF (differencing) / BOTH (merge of MA and DIFF)\n\t\tDefault = BOTH\n\n";
-   print "--step\t\tThe fixed step size to use. The ChIP-seq profile will be converted to have fixed step equal to this number in base pairs (bp).\n\t\tDefault=25 (optional)\n\n";
-   print "--minSize\tThe mininum peak size. Valleys/Footprints/NFRs will NOT be called in peaks that are smaller than this value\n\t\tDefault=500 (optional)\n\n";
-   print "--nucSize\tThe estimated nucleosome size in base pairs (bp).This value is used for the moving average and smoothing the signal.\n\t\tThis value should be divisible by the step size specified (--step).\n\t\tDefault: 150 (~147).\t150 / 25 = 6 (6 bins is equivalent to 1 nucleosome)\n\n"; 
-   print "--mergeMulti\tThe multiplier of step (--step) to use for merging.\n\t\tDefault = 3\t( 3 x 25 = 75 or ~ 1/2 a nucleosome)\n\n";
-   print "--maMulti\tThe moving average multiplier for the slow moving average.\n\t\tDefault = 3 (ie. Slow moving average is equilavent to 3 nucleosomes [3 x 150])\n\n";
-   print "--pMax\t\tFraction of max peak height to use as a threshold. Use to reduce calls in regions with low signal.\n\t\tFor example, use 0.25 (25%) to exclude signal less than 25% of the current peak's max height.\n\t\tDefault = 0 (or 0%) (Optional)\n\n";
-   print "--filter\tFilter NFRs greater than this value. Needed for --pMAX, which can lead to large regions called as NFRs depending on the inputted peaks\n\t\tDefault = 1000 (bp) (Optional).\n\n";
-   print "--outBG\t\tOutput the fixed step ChIP-Seq signal at the specified broad peaks (bedGraph format).\n\n";
-   print "--help\t\t(prints this message)\n\n";
+   print "\tREQUIRES --trim and --genome\n\n";
+   print "--out\tThe output file prefix\n\tDefault=Histrader (optional)\n\n";
+   print "--method\tMethod used to call valleys / footprints/ NFRs\n\tOptions = MA (moving average) / DIFF (differencing) / BOTH (merge of MA and DIFF)\n\tDefault = BOTH\n\n";
+   print "--step\tThe fixed step size to use. The ChIP-seq profile will be converted to have fixed step equal to this number in base pairs (bp).\n\tDefault=25 (optional)\n\n";
+   print "--minSize\tThe mininum peak size. Valleys/Footprints/NFRs will NOT be called in peaks that are smaller than this value\n\tDefault=500 (optional)\n\n";
+   print "--nucSize\tThe estimated nucleosome size in base pairs (bp).This value is used for the moving average and smoothing the signal.\n\tThis value should be divisible by the step size specified (--step).\n\tDefault: 150 (~147).\t150 / 25 = 6 (6 bins is equivalent to 1 nucleosome)\n\n"; 
+   print "--mergeMulti\tThe multiplier of step (--step) to use for merging.\n\tDefault = 3\t( 3 x 25 = 75 or ~ 1/2 a nucleosome)\n\n";
+   print "--maMulti\tThe moving average multiplier for the slow moving average.\n\tDefault = 3 (ie. Slow moving average is equilavent to 3 nucleosomes [3 x 150])\n\n";
+   print "--pMax\tFraction of max peak height to use as a threshold. Use to reduce calls in regions with low signal.\n\tFor example, use 0.25 (25%) to exclude signal less than 25% of the current peak's max height.\n\tDefault = 0 (or 0%) (Optional)\n\n";
+   print "--filter\tFilter NFRs greater than this value. Needed for --pMAX, which can lead to large regions called as NFRs depending on the inputted peaks\n\tDefault = 1000 (bp) (Optional).\n\n";
+   print "--outBG\tOutput the fixed step ChIP-Seq signal at the specified broad peaks (bedGraph format).\n\n";
+   print "--maxValley\tPrint only NFR at the max peak region (TRUE/FALSE). If the NFR is filtered there will be no NFR for that peak. Default=FALSE (optional).\n\n";
+   print "--useDifferential\tUse the differential method to call NFRs (TRUE/FALSE). Default=FALSE (optional).\n\n";
+   print "--randValley\tPrint only one random NFR per peak (TRUE/FALSE). Default=FALSE (optional).\n\n";
+   print "--help\t(prints this message)\n\n";
    exit();
 }
 
+if($maxValley eq "TRUE" && $randValley eq "TRUE"){
+   print "\nERROR:  --maxValley and --randValley cannot be used together.\n";
+   exit();
+}
 
 my $mergeDist=$fixStep*$mergeMulti;
 my $tmp=$nucSize/$fixStep; #number of bins per nucleosome  
@@ -1017,6 +1228,11 @@ my $t2=round($tmp);
 # print Additional parameters
 print "Merge Distance = $mergeDist\nBins Per Nucleosome = $t\n";
 print "pMax = $pMax\nFilter = $filter\n";
+
+if ($maxValley eq "TRUE") {
+   print("maxValley = $maxValley\nuseDifferential = $useDifferential\n");
+}
+
 my %probes=getProbes($probes);
 
 my %sortedProbes=();
@@ -1028,6 +1244,6 @@ for my $chr (keys %probes){
 
 my $index=join(".",$outPrefix,"idx");
 my %bgChr=build_index($chip,$index); 
-getProbeInt($index,$chip,\%bgChr,\%sortedProbes,$genome,$trim,$trimSize,$nucSize, $minPeak, $t, $t2, $fixStep, $mergeDist, $method, $outPrefix, $outBG, $pMax, $filter);
+getProbeInt($index,$chip,\%bgChr,\%sortedProbes,$genome,$trim,$trimSize,$nucSize, $minPeak, $t, $t2, $fixStep, $mergeDist, $method, $outPrefix, $outBG, $pMax, $filter, $maxValley, $randValley, $useDifferential);
 
 print "\nFINISHED!\n";
