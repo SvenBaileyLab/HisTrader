@@ -91,62 +91,136 @@ sub my_min {
    return $min;
 }
 
-sub movingAverageCentre{
+# sub movingAverageCentre {
 
-  my $a = shift; # array with signal values;
-  my $c = shift; # window fast;
+#   my $a = shift; # array with signal values;
+#   my $c = shift; # window fast;
  
-  my $before =  floor((($c-1)/2));
-  my $after =  ceil((($c-1)/2));
+#   my $before =  floor((($c-1)/2));
+#   my $after =  ceil((($c-1)/2));
+
+#   my $tot = $#{$a} + 1;
+
+#   my @sum = @{$a}; # initialize sum
+#   my @count = (1) x $tot; #initialize count
+
+#   my $i = 1;
+   
+#   while($i <= $before){
+#     my @new = @{$a};
+#     my @tmp = (0) x $i;
+#     splice(@new,$tot-$i,$i);
+#     splice(@new,0, 0,@tmp);
+
+#     for(my $j=0; $j<=$#{$a}; $j++){
+#        $sum[$j]+=$new[$j];
+#     }  
+#     for(my $j=$i; $j<=$#{$a}; $j++){
+#        $count[$j]+=1;
+#     }
+#     $i+=1;
+#   }
+ 
+#   $i = 1;
+  
+#   while($i <= $after){
+#     my @new = @{$a};
+#     my @tmp = (0) x $i;
+#     splice(@new,0,$i);
+#     splice(@new,$tot-$i, 0,@tmp);
+
+#     for(my $j=0; $j<=$#{$a}; $j++){
+#        $sum[$j]+=$new[$j];
+#     }
+#     for(my $j=0; $j<=$#{$a}-$i; $j++){
+#        $count[$j]+=1;
+#     }
+#     $i+=1; 
+#   }
+
+#   my @movingAve=(); 
+#   for(my $j=0; $j<=$#{$a};$j++){
+#      push(@movingAve, $sum[$j]/$count[$j]);
+#   }
+
+#   return(@movingAve);
+# }
+
+sub movingAverageCentre {
+
+  my $a = shift; # array with signal values
+  my $c = shift; # window size
+
+  my $before = floor((($c - 1) / 2));
+  my $after  = ceil((($c - 1) / 2));
 
   my $tot = $#{$a} + 1;
+  return () if $tot <= 0;
 
-  my @sum = @{$a}; # initialize sum
-  my @count = (1) x $tot; #initialize count
+  my @sum   = @{$a};
+  my @count = (1) x $tot;
 
   my $i = 1;
-   
-  while($i <= $before){
+
+  # LEFT SIDE PADDING
+  while ($i <= $before) {
+
     my @new = @{$a};
     my @tmp = (0) x $i;
-    splice(@new,$tot-$i,$i);
-    splice(@new,0, 0,@tmp);
 
-    for(my $j=0; $j<=$#{$a}; $j++){
-       $sum[$j]+=$new[$j];
-    }  
-    for(my $j=$i; $j<=$#{$a}; $j++){
-       $count[$j]+=1;
+    my $idx = $tot - $i;
+    $idx = 0 if $idx < 0;
+
+    splice(@new, $idx, $i);
+    splice(@new, 0, 0, @tmp);
+
+    for (my $j = 0; $j <= $#{$a}; $j++) {
+       $sum[$j] += $new[$j] if defined $new[$j];
     }
-    $i+=1;
+
+    for (my $j = $i; $j <= $#{$a}; $j++) {
+       $count[$j] += 1;
+    }
+
+    $i++;
   }
- 
+
   $i = 1;
-  
-  while($i <= $after){
+
+  # RIGHT SIDE PADDING
+  while ($i <= $after) {
+
     my @new = @{$a};
     my @tmp = (0) x $i;
-    splice(@new,0,$i);
-    splice(@new,$tot-$i, 0,@tmp);
 
-    for(my $j=0; $j<=$#{$a}; $j++){
-       $sum[$j]+=$new[$j];
+    splice(@new, 0, $i);
+
+    my $idx = $tot - $i;
+    $idx = 0 if $idx < 0;
+
+    splice(@new, $idx, 0, @tmp);
+
+    for (my $j = 0; $j <= $#{$a}; $j++) {
+       $sum[$j] += $new[$j] if defined $new[$j];
     }
-    for(my $j=0; $j<=$#{$a}-$i; $j++){
-       $count[$j]+=1;
+
+    for (my $j = 0; $j <= $#{$a} - $i; $j++) {
+       $count[$j] += 1;
     }
-    $i+=1; 
+
+    $i++;
   }
 
-  my @movingAve=(); 
-  for(my $j=0; $j<=$#{$a};$j++){
-     push(@movingAve, $sum[$j]/$count[$j]);
+  my @movingAve;
+
+  for (my $j = 0; $j <= $#{$a}; $j++) {
+     $movingAve[$j] = $sum[$j] / $count[$j];
   }
 
-  return(@movingAve);
+  return @movingAve;
 }
 
-sub crossover{
+sub crossover {
   my $a=shift; # fast moving average
   my $b=shift; # slow moving average
   my $c=shift; # positions
@@ -349,54 +423,123 @@ sub merge{
    return(@merge);
 }     
 
+# sub mergeOverlaps{
+#    my $a=shift; #assumes sorted
+   
+#    my @regions=@{$a};
+#    my @merge=();
+
+#    print "REGIONS -- @regions\n";
+
+#    for(my $i=0; $i <= $#regions - 1; $i++){
+#       my @pos=split(/-/,$regions[$i]);
+#       my $start=$pos[0];
+#       my $end=$pos[1];
+#       for(my $j=$i + 1; $j <= $#regions; $j++){
+#          my @pos2=split(/-/,$regions[$j]);
+#          my $start2=$pos2[0];
+#          my $end2=$pos2[1];
+#          if($end >= $start2 && $start2 >= $start ){
+#             $end=$end2;
+#             splice(@regions, $j, 1);
+#          }
+#       }
+#       my $new=join("-",$start,$end);
+#       push(@merge,$new);
+#    }
+#    return(@merge);
+# }
+
+# sub highRes{
+#    my $signal = shift;
+#    my $position = shift;
+
+#    my @hresSig=();
+#    my @hresPos=();
+   
+
+#    for(my $i=0; $i<=$#{$position}; $i++){
+#       my @pos=split(/-/,${$position}[$i]);
+#       my $start=$pos[0];
+#       my $end=$pos[1];   
+#       for(my $j=$start; $j<=$end - 1; $j++){
+#          my $pos=join("-",$j, $j+1);
+#          push(@hresSig, ${$signal}[$i]);
+#          push(@hresPos, $pos);
+#       }
+#    }
+#    return( \@hresSig, \@hresPos);
+# }
+
 sub mergeOverlaps{
    my $a=shift; #assumes sorted
-   
+
    my @regions=@{$a};
    my @merge=();
 
    print "REGIONS -- @regions\n";
 
-   for(my $i=0; $i <= $#regions - 1; $i++){
-      my @pos=split(/-/,$regions[$i]);
-      my $start=$pos[0];
-      my $end=$pos[1];
-      for(my $j=$i + 1; $j <= $#regions; $j++){
-         my @pos2=split(/-/,$regions[$j]);
-         my $start2=$pos2[0];
-         my $end2=$pos2[1];
-         if($end >= $start2 && $start2 >= $start ){
-            $end=$end2;
-            splice(@regions, $j, 1);
+   return () if !@regions;
+
+   my $i = 0;
+
+   while ($i <= $#regions) {
+
+      my @pos = split(/-/, $regions[$i]);
+      my $start = $pos[0];
+      my $end   = $pos[1];
+
+      my $j = $i + 1;
+
+      while ($j <= $#regions) {
+
+         my @pos2 = split(/-/, $regions[$j]);
+
+         my $start2 = $pos2[0];
+         my $end2   = $pos2[1];
+
+         if ($end >= $start2 && $start2 >= $start) {
+            $end = $end2;
+            splice(@regions, $j, 1);   # safe because we do NOT increment j
+         } else {
+            $j++;
          }
       }
-      my $new=join("-",$start,$end);
-      push(@merge,$new);
+
+      push(@merge, "$start-$end");
+      $i++;
    }
-   return(@merge);
+
+   return @merge;
 }
 
 sub highRes{
    my $signal = shift;
    my $position = shift;
 
+   return ([], []) if !defined $signal || !defined $position;
+
    my @hresSig=();
    my @hresPos=();
-   
 
-   for(my $i=0; $i<=$#{$position}; $i++){
-      my @pos=split(/-/,${$position}[$i]);
-      my $start=$pos[0];
-      my $end=$pos[1];   
-      for(my $j=$start; $j<=$end - 1; $j++){
-         my $pos=join("-",$j, $j+1);
+   for(my $i=0; $i <= $#{$position}; $i++){
+
+      next if !defined ${$position}[$i];
+
+      my @pos = split(/-/, ${$position}[$i]);
+      my $start = $pos[0];
+      my $end   = $pos[1];
+
+      next if !defined $start || !defined $end;
+
+      for(my $j=$start; $j <= $end - 1; $j++){
          push(@hresSig, ${$signal}[$i]);
-         push(@hresPos, $pos);
+         push(@hresPos, "$j-" . ($j+1));
       }
    }
-   return( \@hresSig, \@hresPos);
-}
 
+   return (\@hresSig, \@hresPos);
+}
 
 sub getMaxNucValley {
     my ($a, $b, $c, $d, $useDifferential) = @_;
@@ -732,10 +875,17 @@ sub getProbeInt{
      
               my $peak=join(":",$chr,$probe);
              
-              if(@{$int{$chr}{$probe}} && @{$step{$chr}{$probe}}){ 
-
+            #   if(@{$int{$chr}{$probe}} && @{$step{$chr}{$probe}}){ 
+               if (
+                  defined $int{$chr}{$probe} &&
+                  defined $step{$chr}{$probe} &&
+                  @{$int{$chr}{$probe}} &&
+                  @{$step{$chr}{$probe}}
+               ){
+                  
                  my ($highResSig, $highResStep)=highRes(\@{$int{$chr}{$probe}},\@{$step{$chr}{$probe}});
                  my ($newSignal, $newStep)=increaseStep(\@{$highResSig},\@{$highResStep},$fixStep);
+                 next unless defined $newSignal && defined $newStep;
              
                  @{$int{$chr}{$probe}}=();
                  @{$step{$chr}{$probe}}=();
