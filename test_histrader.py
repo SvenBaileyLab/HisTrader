@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import histrader as H
+import histrader_pkg.histrader as H
 
 
 # ─────────────────────────────────────────────────────────────────────────────

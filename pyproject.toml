@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "histrader"
+dynamic = ["version"]
+description = "A tool to identify nucleosome free regions from ChIP-Seq of histone modifications"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "Eftyhios Kirbizakis, Yifei Yan, Swneke D. Bailey" }]
+license = { text = "GNU General Public License v3.0" }
+dependencies = [
+  "numpy>=1.22",
+  "pandas>=1.5",
+  "pyranges>=0.1",
+  "pyBigWig>=0.3.18",
+]
+
+[project.scripts]
+histrader = "histrader_pkg.histrader:main"
+
+[project.urls]
+Repository = "https://github.com/SvenBaileyLab/HisTrader"
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.setuptools.packages.find]
+include = ["histrader_pkg*"]
+
+[tool.setuptools_scm]
