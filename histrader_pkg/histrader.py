@@ -7,38 +7,6 @@ Python port of the original Perl implementation:
     Kirbizakis, Yan & Bailey, 2020 -- https://doi.org/10.1101/2020.03.12.989228
     https://github.com/SvenBaileyLab/HisTrader
 
-Given a bedGraph signal file and a (broad) peak BED file called from it, this
-emits BED files of NFRs and nucleosome-occupied regions (NORs) found within the
-peaks, plus -- optionally -- the extracted FASTA sequences and the fixed-step
-signal track.
-
-Algorithm (unchanged from the Perl):
-  For each peak at least --minSize wide:
-    1. Expand the bedGraph intervals overlapping the peak to single-bp
-       resolution, then re-bin to a fixed step (--step).
-    2. Zero out bins below --pMax * (peak max signal).
-    3. DIFF method:  smooth, take 1st and 2nd differences, and treat runs where
-       the 2nd difference is negative as nucleosomes; gaps between them are NFRs.
-       MA method:    compute a fast and a slow centred moving average; bins where
-       fast > slow are nucleosomal; gaps between merged nucleosome runs are NFRs.
-       BOTH:         intersect the NFR calls and union the nucleosome calls.
-    4. Filter NFRs wider than --filter, optionally keep only the NFR at the
-       highest nucleosome (--maxValley) or one random NFR (--randValley).
-
-Differences from the Perl version (all deliberate -- see FIXED notes inline):
-  * Coordinates are integer (start, end) tuples, not "start-end" strings, so
-    there is no repeated string splitting.
-  * The bedGraph is loaded once into per-chromosome numpy arrays instead of
-    re-seeking a packed binary index. This removes the per-chromosome position
-    desync in the original getProbeInt.
-  * --maMulti now actually controls the slow moving average. In the Perl,
-    GetOptions mapped both --mergeMulti and --maMulti to the same variable.
-  * getFasta uses standard 0-based half-open BED slicing (the Perl did
-    `substr(seq, start-1, size+1)`, off by one, with a literal "CHECK" comment),
-    and negative starts are clamped to 0.
-  * The stray `print "REGIONS -- ..."` debug line in mergeOverlaps is gone.
-  * overlap_union / overlap_consensus are reimplemented as a proper interval
-    union and intersection (the Perl versions were pairwise-only and O(n^2)).
 """
 
 from __future__ import annotations

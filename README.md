@@ -21,14 +21,12 @@ Requires Python 3.8+ and the following packages:
 pip install numpy pandas pyranges pyBigWig pytest
 ```
 
-`pyBigWig` is optional — only required if using bigWig input files.
-
 ---
 
 ## Usage
 
 ```bash
-python histrader.py --signal ChIP.bedGraph --peaks ChIP.bed
+python histrader.py --signal ChIP.bedGraph/bigWig --peaks ChIP.bed
 ```
 
 ### Required Parameters
