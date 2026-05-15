@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-histrader = "histrader_pkg.histrader:main"
+histrader = "histrader.histrader:main"
 
 [project.urls]
 Repository = "https://github.com/SvenBaileyLab/HisTrader"
@@ -27,6 +27,6 @@ Repository = "https://github.com/SvenBaileyLab/HisTrader"
 test = ["pytest>=7"]
 
 [tool.setuptools.packages.find]
-include = ["histrader_pkg*"]
+include = ["histrader*"]
 
 [tool.setuptools_scm]
