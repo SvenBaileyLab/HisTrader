@@ -18,7 +18,12 @@ For more details, please refer to our publication: https://doi.org/10.1101/2020.
 Requires Python 3.8+ and the following packages:
 
 ```bash
+pip install histrader
+
+# or
+
 pip install numpy pandas pyranges pyBigWig pytest
+pip install .
 ```
 
 ---
