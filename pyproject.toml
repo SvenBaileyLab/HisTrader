@@ -30,3 +30,7 @@ test = ["pytest>=7"]
 include = ["histrader*"]
 
 [tool.setuptools_scm]
+local_scheme = "no-local-version"
+
+[tool.setuptools]
+license-files = []
