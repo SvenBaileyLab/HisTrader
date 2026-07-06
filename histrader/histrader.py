@@ -747,12 +747,19 @@ def process(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    from histrader import __version__
+    class _HelpFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                         argparse.RawDescriptionHelpFormatter):
+        pass
+
     p = argparse.ArgumentParser(
         prog="histrader.py",
-        description="Identify Nucleosome-Free Regions from ChIP-Seq of histone "
-                    "modifications.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=HEADER + "\nIdentify Nucleosome-Free Regions from ChIP-Seq "
+                    "of histone modifications.",
+        formatter_class=_HelpFormatter,
     )
+    p.add_argument("--version", action="version",
+                   version=f"HisTrader {__version__}")
     p.add_argument("--signal", required=True, dest="bedGraph", metavar="SIGNAL",
                    help="ChIP-Seq signal file in bedGraph or bigWig format (.bw/.bigwig).")
     p.add_argument("--peaks", required=True,
@@ -797,6 +804,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Keep only one random NFR per peak.")
     p.add_argument("--seed", type=int, default=None,
                    help="Random seed, for reproducible --randValley output.")
+    p.add_argument("--quiet", action="store_true",
+                   help="Suppress the banner header.")
     return p
 
 
@@ -813,8 +822,9 @@ HEADER = """
 
 
 def main(argv: list[str] | None = None) -> None:
-    print(HEADER)
     args = build_parser().parse_args(argv)
+    if not args.quiet:
+        print(HEADER)
     print(f"Identifying valleys in {args.bedGraph} at positions in {args.peaks}\n")
     process(args)
 
