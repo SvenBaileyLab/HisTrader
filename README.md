@@ -2,12 +2,11 @@
 
 ## Introduction
 
-HisTrader is a tool designed to identify **Nucleosome-Free Regions (NFRs)** from **ChIP-Seq data targeting histone modifications**. It takes a signal file (bedGraph or bigWig) and a broad peak file as input, and outputs BED files identifying **NFRs** and **nucleosome-occupied regions (NORs)** within those peaks.
+HisTrader is a tool designed to identify Nucleosome-Free Regions (NFRs) from ChIP-Seq data targeting histone modifications. It takes a signal file (bedGraph or bigWig) and a broad peak file as input, and outputs BED files identifying NFRs and nucleosome-occupied regions (NORs) within those peaks.
 
-NFRs are detected using a combination of **moving averages** and **second-order differencing** to identify valley-like patterns within peaks.
+NFRs are detected using a combination of moving averages and second-order differencing to identify valley-like patterns within peaks.
 
-- Running without optional parameters applies the **least stringent** settings, maximising the number of predicted NFRs.
-- Stricter analysis can be customised using the parameters below.
+![HisTrader graphical abstract](docs/histrader_graphical_abstract.png)
 
 For more details, please refer to our publication: https://doi.org/10.1101/2020.03.12.989228
 
