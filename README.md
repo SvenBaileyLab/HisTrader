@@ -8,7 +8,7 @@ NFRs are detected using a combination of moving averages and second-order differ
 
 ![HisTrader graphical abstract](docs/histrader_graphical_abstract.png)
 
-For more details, please refer to our publication: [https://doi.org/10.1101/2020.03.12.989228](https://doi.org/10.1016/j.crmeth.2026.101607)
+For more details, please refer to our publication: [https://doi.org/10.1016/j.crmeth.2026.101607](https://doi.org/10.1016/j.crmeth.2026.101607)
 
 ---
 
@@ -118,4 +118,4 @@ If you use HisTrader in your research, please cite:
 > **HisTrader: A Tool to Identify Nucleosome Free Regions from ChIP-Seq of Histone Post-Translational Modifications**
 > Eftyhios Kirbizakis, Yifei Yan, Ansley Gnanapragasam, Juliana Cavalcante de Moura, Xiaoyang Zhang, and Swneke D. Bailey
 > Cell Reports Methods, 2026, 101607
-> [https://doi.org/10.1101/2020.03.12.989228](https://doi.org/10.1016/j.crmeth.2026.101607)
+> [https://doi.org/10.1016/j.crmeth.2026.101607](https://doi.org/10.1016/j.crmeth.2026.101607)
