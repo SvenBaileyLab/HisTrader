@@ -4,7 +4,7 @@ HisTrader -- identify Nucleosome-Free Regions (NFRs) from ChIP-Seq of histone
 modifications.
 
 Python port of the original Perl implementation:
-    Kirbizakis, Yan & Bailey, 2020 -- https://doi.org/10.1101/2020.03.12.989228
+    Kirbizakis, Yan & Bailey, 2026 -- https://doi.org/10.1016/j.crmeth.2026.101607
     https://github.com/SvenBaileyLab/HisTrader
 
 """
@@ -815,7 +815,7 @@ HEADER = """
 ##    HISTRADER: A tool to identify nucleosome free regions from ChIP-Seq of Histone Modifications    ##
 ##                                                                                                    ##
 ##                  Written by Eftyhios Kirbizakis, Yifei Yan, and Swneke D. Bailey                   ##
-##                               Copyright 2020 Swneke D. Bailey                                      ##
+##                               Copyright 2026 Swneke D. Bailey                                      ##
 ##                                                                                                    ##
 ########################################################################################################
 """
